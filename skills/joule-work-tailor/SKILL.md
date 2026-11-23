@@ -5,7 +5,7 @@ description: >-
 allowed-tools: create_skill install_asset write_file web_search create_space add_card_to_space list_emails list_calendar_events read_file
 metadata:
   author: Pedro Millan
-  version: 2.0.3
+  version: 2.0.4
   tags: setup onboarding presales role-based demo-environments toolkit partner customer personalization skills-management state-management scoring outlook-enrichment
   required-mcp-servers: "*hub.joule.only.sap*"
 ---
@@ -42,7 +42,7 @@ Do NOT use inline format (`1 · Option one 2 · Option two`). Do NOT use bold-nu
 
 This skill maintains a state file across conversations to remember the user's role, preferences, and past decisions. Returning users get instant startup — no repeated questions — and smarter recommendations that improve over time.
 
-**State file:** `joule-work-tailor-state.json` (working directory)
+**State file:** `joule-work-tailor/joule-work-tailor-state.json`
 
 **Schema:**
 
@@ -75,7 +75,7 @@ This skill maintains a state file across conversations to remember the user's ro
 **Read points:** Step 0 (init) · Step A3 (NEW detection) · Step A5 (filter dismissed/skipped) · Flow B (reuse profile).
 **Write points:** Step A5 (last_seen_catalog) · Step A6 end (full state) · Flow B end (full state) · Dismiss command (dismissed_skills).
 
-**Retrocompatibility:** If `joule-work-tailor-state.json` does not exist but `my-joule-work-tailor.md` does, parse the profile file to infer role and areas from the ROLE DESCRIPTION block. Pre-populate a new state with whatever can be extracted. All list fields (installed_uuids, last_seen_catalog, skipped_skills, dismissed_skills) default to empty arrays. `secondary_role` and `secondary_role_number` default to `null` when absent from an older state file.
+**Retrocompatibility:** If `joule-work-tailor/joule-work-tailor-state.json` does not exist but `my-joule-work-tailor.md` or `joule-work-tailor/my-joule-work-tailor.md` does, parse the profile file to infer role and areas from the ROLE DESCRIPTION block. Pre-populate a new state with whatever can be extracted. All list fields (installed_uuids, last_seen_catalog, skipped_skills, dismissed_skills) default to empty arrays. `secondary_role` and `secondary_role_number` default to `null` when absent from an older state file.
 
 **Role change escape hatch:** At any point during the session, if the user says "change my role", "update my role", "cambiar mi rol", "Rolle ändern", or similar → re-run Step A1 → A1b → A2 → A2b with the full question flow, update the state file, and continue from where they left off. If the user says "change my secondary role", "remove secondary role", or similar → re-run Step A1b only (skip A1 and A2).
 
@@ -86,12 +86,12 @@ This skill maintains a state file across conversations to remember the user's ro
 **Step 0-pre — Silent state check (no output to user):**
 
 Fire in a single parallel message:
-1. `read_file` → `joule-work-tailor-state.json`
-2. `ls` → check working directory for `my-joule-work-tailor.md`
+1. `read_file` → `joule-work-tailor/joule-work-tailor-state.json`
+2. `ls` → check `joule-work-tailor/` directory for `my-joule-work-tailor.md`
 
 Determine session context:
 - **STATE = loaded** — state file found and contains a `role` field. Extract all fields into session variables.
-- **STATE = migrated** — state file not found, but `my-joule-work-tailor.md` found. Read it with `read_file`. Parse the ROLE DESCRIPTION block to infer role name and areas. Map to the closest role number from the role list. Set all list fields (installed_uuids, last_seen_catalog, skipped_skills, dismissed_skills) to empty arrays. Create a new in-memory state object.
+- **STATE = migrated** — state file not found, but `joule-work-tailor/my-joule-work-tailor.md` found (or legacy `my-joule-work-tailor.md` in root). Read it with `read_file`. Parse the ROLE DESCRIPTION block to infer role name and areas. Map to the closest role number from the role list. Set all list fields (installed_uuids, last_seen_catalog, skipped_skills, dismissed_skills) to empty arrays. Create a new in-memory state object.
 - **STATE = fresh** — neither file found. First-time user.
 
 Do NOT output anything to the user from this step. Proceed silently to Step 0a.
@@ -312,9 +312,10 @@ Loop back to the relevant question, re-collect, then return here and re-display 
 ### Step A3 — Live Catalog Search
 
 **PROFILE CONTEXT CHECK — run silently before anything else, no output to the user:**
-Check if `my-joule-work-tailor.md` exists in the working directory using `ls`.
+Check if `joule-work-tailor/my-joule-work-tailor.md` exists using `ls` on the `joule-work-tailor/` directory.
 - Found → read it using `read_file`. Extract the ROLE DESCRIPTION and PERSONAL INSTRUCTIONS blocks (look for text between the `┌` and `└` box-drawing characters, or under headings containing "ROLE DESCRIPTION" and "PERSONAL INSTRUCTIONS"). Store as PREV_PROFILE = { role_description: "...", personal_instructions: "..." }.
-- Not found → PREV_PROFILE = none.
+- Not found → check legacy path `my-joule-work-tailor.md` in the root working directory. If found there, read and extract same blocks. Set PREV_PROFILE accordingly.
+- Neither found → PREV_PROFILE = none.
 Do NOT mention this check to the user.
 
 **LANGUAGE DETECTION — infer from the conversation so far:**
@@ -535,7 +536,7 @@ After collecting all 5 answers:
 1. Translate each selection into a concrete instruction sentence.
 2. Append a **"Format and style preferences"** subsection to the PERSONAL INSTRUCTIONS block. Include only non-default selections — skip answers that match the role-based defaults already in the profile to avoid redundancy.
 3. Show the updated PERSONAL INSTRUCTIONS block with the new subsection highlighted (use a `➕ Added:` marker).
-4. Update `my-joule-work-tailor.md` with the refined profile.
+4. Update `joule-work-tailor/my-joule-work-tailor.md` with the refined profile.
 5. Continue to **1c — Profile Enrichment**.
 
 If 2: continue to **1c — Profile Enrichment** below.
@@ -591,7 +592,7 @@ Show the enrichment sentences and ask:
 
 *Type one number.*
 
-If 1 or 2: append selected sentences to the PERSONAL INSTRUCTIONS block under a **"Work context (from Outlook)"** subsection. Show the updated block with `➕ Added:` markers. Update `my-joule-work-tailor.md`.
+If 1 or 2: append selected sentences to the PERSONAL INSTRUCTIONS block under a **"Work context (from Outlook)"** subsection. Show the updated block with `➕ Added:` markers. Update `joule-work-tailor/my-joule-work-tailor.md`.
 
 Set session variable `PROFILE_ENRICHED = true`.
 
@@ -657,7 +658,7 @@ Number rows **continuously** across all sections. The user references any item b
 
 If updates found, add UPDATES AVAILABLE section.
 
-Save full output (profile + recommendations) as `my-joule-work-tailor.md` using `write_file`. For roles with DEMOS flag, append a **DEMO ENVIRONMENT QUICK-REFERENCE** section listing all DEMO_CONNECTOR_LIST entries (name, landscape, MCP endpoint) plus access instructions: "Before connecting: close ALL browser tabs. Log in fresh at experience-agent.cloud.sap with your own or demo user. Then add each connector."
+Save full output (profile + recommendations) as `joule-work-tailor/my-joule-work-tailor.md` using `write_file`. For roles with DEMOS flag, append a **DEMO ENVIRONMENT QUICK-REFERENCE** section listing all DEMO_CONNECTOR_LIST entries (name, landscape, MCP endpoint) plus access instructions: "Before connecting: close ALL browser tabs. Log in fresh at experience-agent.cloud.sap with your own or demo user. Then add each connector."
 
 ---
 
@@ -726,7 +727,7 @@ IMPROVED PERSONAL INSTRUCTIONS  [copy]
 [X] / 1500
 ```
 
-4. Update `my-joule-work-tailor.md` with the improved profile blocks (overwrite the profile section, keep the recommendations).
+4. Update `joule-work-tailor/my-joule-work-tailor.md` with the improved profile blocks (overwrite the profile section, keep the recommendations).
 
 5. Show the install CTA again so the user can continue:
 
@@ -746,7 +747,7 @@ If PREV_PROFILE ≠ none at the start of Step A5, immediately show the diff comp
 ### Step A6 — Install
 
 For option 1 (Essential Bundle) or option 2 (choose items): proceed as below.
-For option 3 (done): *"Your profile and recommendations are saved in my-joule-work-tailor.md. Come back anytime to install. Open a new conversation to apply your new personalization profile."* End.
+For option 3 (done): *"Your profile and recommendations are saved in joule-work-tailor/my-joule-work-tailor.md. Come back anytime to install. Open a new conversation to apply your new personalization profile."* End.
 
 **Install flow (INTERNAL) — RESILIENT: always continue on failure, never abort.**
 
@@ -829,7 +830,7 @@ After demo connectors install: *"To activate each demo connector: log in at expe
 
 **Save state (silent — no output to user):**
 
-After the install summary (and retry if applicable), save the full state to `joule-work-tailor-state.json` using `write_file`. Build the JSON object with:
+After the install summary (and retry if applicable), save the full state to `joule-work-tailor/joule-work-tailor-state.json` using `write_file`. Build the JSON object with:
 
 - `schema_version`: 1
 - `last_run`: current ISO timestamp
@@ -921,7 +922,7 @@ After the install summary (and after Step A7 if applicable), offer once to both 
 **Would you like me to create a 'My JWD Toolkit' space to save your profile and recommendations?**
 
 1. Yes — create a dedicated space for my toolkit
-2. No — the results are already saved in `my-joule-work-tailor.md`
+2. No — the results are already saved in `joule-work-tailor/my-joule-work-tailor.md`
 
 *Type one number.*
 
@@ -945,7 +946,7 @@ If 1:
 
 Fire in a **single message** (INTERNAL only):
 - `mcp_<hash>_list_my_skills()` + `mcp_<hash>_check_updates(skills: [...])`
-- If `joule-work-tailor-state.json` was not already loaded in Step 0, read it now.
+- If `joule-work-tailor/joule-work-tailor-state.json` was not already loaded in Step 0, read it now.
 
 Store OUTDATED and INSTALLED_UUIDS. Merge `installed_uuids` from state (if available) with the live `list_my_skills` result — the union gives the most complete installed set.
 
@@ -963,7 +964,7 @@ Skip the role question and the "anything new" question entirely — use stored r
 *Type one number.*
 
 If 1:
-- Read `my-joule-work-tailor.md` if it exists → set PREV_PROFILE.
+- Read `joule-work-tailor/my-joule-work-tailor.md` if it exists → set PREV_PROFILE.
 - Regenerate profile from stored ROLE + flags.
 - Show diff (if PREV_PROFILE found) or new profile blocks (same format as Step A5).
 
@@ -994,7 +995,7 @@ If 3: re-run Step A1b only. If 2: re-run Step A1 with the full role list. If 1:
 2. No
 
 *Type one number.* — if 1:
-- Run file check: does `my-joule-work-tailor.md` exist? If yes, read and set PREV_PROFILE.
+- Run file check: does `joule-work-tailor/my-joule-work-tailor.md` exist? If yes, read and set PREV_PROFILE.
 - Regenerate profile from current ROLE + flags.
 - Show diff (if PREV_PROFILE found) or new profile blocks.
 - Show invite sentence if no previous profile.
@@ -1048,7 +1049,7 @@ Joule Work Tailor Update Report
 ```
 
 Number every row. If profile refresh requested, show profile diff or new blocks (same rules as Step A5).
-Save as `my-joule-work-tailor-update.md`.
+Save as `joule-work-tailor/my-joule-work-tailor-update.md`.
 
 **How would you like to proceed?**
 
@@ -1064,7 +1065,7 @@ Apply the same **resilient install flow** as Step A6 (continue on failure, show 
 
 **Save state (silent — no output to user):**
 
-After the install summary, save full state to `joule-work-tailor-state.json` — same schema and merge logic as the Flow A state save (after Step A6). Set `last_run_mode` to `"update"`. Update `last_seen_catalog` with `current_catalog_uuids`. Merge newly installed UUIDs into `installed_uuids`. Update `skipped_skills` with skills shown but not installed.
+After the install summary, save full state to `joule-work-tailor/joule-work-tailor-state.json` — same schema and merge logic as the Flow A state save (after Step A6). Set `last_run_mode` to `"update"`. Update `last_seen_catalog` with `current_catalog_uuids`. Merge newly installed UUIDs into `installed_uuids`. Update `skipped_skills` with skills shown but not installed.
 
 ---
 
@@ -1140,7 +1141,7 @@ Generate profile for CUSTOMER_ROLE (same logic as A5, using role defaults from `
 
 Show profile blocks at the top, using the same format and invite sentence as Step A5 (profile first, recommendations below).
 
-Save as `my-joule-work-tailor.md` using `write_file`. Omit demo connectors, GitHub, AI-generatable, and OneAI sections.
+Save as `joule-work-tailor/my-joule-work-tailor.md` using `write_file`. Omit demo connectors, GitHub, AI-generatable, and OneAI sections.
 
 ### CT4 — Install
 
@@ -1157,7 +1158,7 @@ End: *"Your Joule Work is now set up for your role. Open a new conversation to s
 
 **Save state (silent — no output to user):**
 
-After the install summary, save the full state to `joule-work-tailor-state.json` using `write_file`. Build the JSON object with:
+After the install summary, save the full state to `joule-work-tailor/joule-work-tailor-state.json` using `write_file`. Build the JSON object with:
 - `schema_version`: 1
 - `last_run`: current ISO timestamp
 - `last_run_mode`: "setup"
@@ -1189,7 +1190,7 @@ After install, offer once:
 **Would you like me to create a 'My JWD Toolkit' space to save your recommendations?**
 
 1. Yes — create a space for my toolkit
-2. No — the results are saved in `my-joule-work-tailor.md`
+2. No — the results are saved in `joule-work-tailor/my-joule-work-tailor.md`
 
 *Type one number.*
 
@@ -1205,7 +1206,7 @@ When the user says "dismiss N", "dismiss 3, 7", "hide N", "ocultar N", "ausblend
 
 1. Parse the number(s). Look up the corresponding UUID(s) from the most recent recommendations (the numbered rows from Step A5 or B4).
 2. For each UUID: add to `dismissed_skills` in the state object.
-3. Save updated state to `joule-work-tailor-state.json` immediately (read current file → merge dismissed list → write).
+3. Save updated state to `joule-work-tailor/joule-work-tailor-state.json` immediately (read current file → merge dismissed list → write).
 4. Confirm: *"Hidden — [skill name] won't appear again."*
 
 **Undo dismiss:** If the user says "undo dismiss", "undo dismiss N", or "show dismissed":
