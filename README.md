@@ -4,13 +4,6 @@
 
 Joule Work Tailor finds and installs the right skills, connectors, demo environments, personalization profile, and agents — just answer numbered questions.
 
-| | |
-|---|---|
-| **Author** | Pedro Millan · pedro.millan@sap.com |
-| **Version** | 2.0.4 |
-| **License** | Apache 2.0 |
-| **Catalog** | [skills.cloud.sap](https://skills.cloud.sap) |
-
 ---
 
 ## Who is it for?
@@ -135,6 +128,13 @@ Download the ZIP and go to **Extensions → Skills → New → Upload**.
 - **Fallback chain** — 3-tier relaxation when filters return too few results
 
 ---
+
+| | |
+|---|---|
+| **Author** | Pedro Millan · pedro.millan@sap.com |
+| **Version** | 2.0.4 |
+| **License** | Apache 2.0 |
+| **Catalog** | [skills.cloud.sap](https://skills.cloud.sap) |
 
 ## Contributing
 
