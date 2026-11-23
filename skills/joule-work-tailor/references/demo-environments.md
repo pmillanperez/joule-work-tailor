@@ -105,7 +105,9 @@ All SIX environments require authentication via the **SIX Experience Agent**. Co
 #### I4M — Public Sector (Public Cloud)
 | # | Service | MCP Endpoint | Areas |
 |---|---|---|---|
-| 1 | S/4HANA Public Cloud | https://se-demo-six-i4w-oid-mcp-mcp-s4hana-mcp-server.cfapps.eu10-005.hana.ondemand.com/mcp | Cloud ERP / Public Sector |
+| 1 | S/4HANA Public Cloud | https://se-demo-six-i4m-oid-mcp-mcp-s4hana-mcp-server.cfapps.eu10-005.hana.ondemand.com/mcp | Cloud ERP / Public Sector |
+
+> ⚠️ Note: if the above endpoint returns a connection error, verify the landscape ID against the SIX Hub at https://six-mcp-hub.cfapps.eu10-004.hana.ondemand.com/#landscapes — the URL may differ from the landscape code.
 
 ---
 

@@ -1,6 +1,6 @@
 # SAP Product Portfolio & Role Reference (Nov 2026)
 
-Use this file to ensure correct official product names, acronyms, and role titles throughout jwd-tailor — in search queries, role descriptions, and personalization profile text.
+Use this file to ensure correct official product names, acronyms, and role titles throughout Joule Work Tailor — in search queries, role descriptions, and personalization profile text.
 
 ---
 

@@ -1,16 +1,16 @@
 ---
-name: jwd-tailor
+name: joule-work-tailor
 description: >-
-  Role-based JWD toolkit for SAP employees, partner consultants, and SAP customer business users. Covers 17 roles across Cloud ERP, BAIP, CX, Supply Chain, Finance, HCM, BTM, and customer business functions. Two modes: first-time setup and stay current. Three audiences: SAP internal (hub.joule.only.sap), partner (public catalog + partner track), customer (simplified productivity track). ADAPT connector auto-surfaced for advisory roles. Activate: equip my JWD, tailor JWD to my role, tailor my joule, personalize joule work, what skills should I install, set up my demo environments, which demo connectors should I install, set up Joule as a partner, I work at an SAP customer, personaliza mi joule work, qué necesito para mi rol, JWD einrichten, Joule für meine Rolle anpassen, Joule Work personalisieren, welche Skills brauche ich.
-allowed-tools: create_skill install_asset write_file web_search create_space add_card_to_space
+  Role-based Joule Work Tailor skill for SAP employees, partner consultants, and SAP customer business users. Covers 17 roles across Cloud ERP, BAIP, CX, Supply Chain, Finance, HCM, BTM, and customer business functions. Two modes: first-time setup and stay current. Three audiences: SAP internal (hub.joule.only.sap), partner (public catalog + partner track), customer (simplified productivity track). ADAPT connector auto-surfaced for advisory roles. Activate: Joule Work Tailor, joule-work-tailor, equip my JWD, tailor JWD to my role, tailor my Joule Work, set up Joule Work for my role, personalize joule work, what skills should I install, set up my demo environments, which demo connectors should I install, set up Joule as a partner, I work at an SAP customer, personaliza mi joule work, qué necesito para mi rol, JWD einrichten, Joule für meine Rolle anpassen, Joule Work personalisieren, welche Skills brauche ich.
+allowed-tools: create_skill install_asset write_file web_search create_space add_card_to_space list_emails list_calendar_events read_file
 metadata:
   author: Pedro Millan
-  version: 1.9.2
-  tags: setup onboarding presales role-based demo-environments toolkit partner customer personalization skills-management
+  version: 2.0.3
+  tags: setup onboarding presales role-based demo-environments toolkit partner customer personalization skills-management state-management scoring outlook-enrichment
   required-mcp-servers: "*hub.joule.only.sap*"
 ---
 
-# jwd-tailor
+# Joule Work Tailor
 
 Personalise Joule Work Desktop with the right skills, connectors, demo environments, and profile settings for your role. The user never has to type product names or free-text descriptions — every question is a numbered option list answered with a single number or a comma-separated list.
 
@@ -38,9 +38,65 @@ Do NOT use inline format (`1 · Option one 2 · Option two`). Do NOT use bold-nu
 
 ---
 
-## Step 0 — Detect Catalog Mode and Audience
+## State Management — Persistent Memory
 
-> ⚠️ **Context note:** If you are currently chatting from inside another Joule Space (e.g. a customer project space), jwd-tailor may add cards to that space unintentionally. To keep your toolkit separate, run this skill from the **main Joule chat** — not from inside a project Space. At the end of setup, you can create a dedicated **'My JWD Toolkit'** space.
+This skill maintains a state file across conversations to remember the user's role, preferences, and past decisions. Returning users get instant startup — no repeated questions — and smarter recommendations that improve over time.
+
+**State file:** `joule-work-tailor-state.json` (working directory)
+
+**Schema:**
+
+```json
+{
+  "schema_version": 1,
+  "last_run": "ISO timestamp",
+  "last_run_mode": "setup | update",
+  "audience": "INTERNAL | PARTNER | CUSTOMER",
+  "role": "Solution Advisor",
+  "role_number": 1,
+  "secondary_role": "Developer",
+  "secondary_role_number": 6,
+  "areas": ["Cloud ERP", "Data and AI"],
+  "flags": { "DEMOS": true, "PRESENTATIONS": true, "CODING": false, "RESEARCH": true },
+  "demo_envs": ["C39", "GLA-26Q2"],
+  "language": "en",
+  "installed_uuids": ["uuid1", "uuid2"],
+  "installed_connectors": ["ADAPT Connector"],
+  "last_seen_catalog": ["uuid-all-seen-on-last-run"],
+  "skipped_skills": [{ "uuid": "x", "version": "1.2", "name": "skill-name", "skipped_at": "ISO" }],
+  "dismissed_skills": ["uuid-permanently-hidden"],
+  "profile_enriched": true,
+  "last_enriched": "ISO timestamp or null"
+}
+```
+
+`secondary_role` and `secondary_role_number` are optional — omit (or set to `null`) when no secondary role was selected.
+
+**Read points:** Step 0 (init) · Step A3 (NEW detection) · Step A5 (filter dismissed/skipped) · Flow B (reuse profile).
+**Write points:** Step A5 (last_seen_catalog) · Step A6 end (full state) · Flow B end (full state) · Dismiss command (dismissed_skills).
+
+**Retrocompatibility:** If `joule-work-tailor-state.json` does not exist but `my-joule-work-tailor.md` does, parse the profile file to infer role and areas from the ROLE DESCRIPTION block. Pre-populate a new state with whatever can be extracted. All list fields (installed_uuids, last_seen_catalog, skipped_skills, dismissed_skills) default to empty arrays. `secondary_role` and `secondary_role_number` default to `null` when absent from an older state file.
+
+**Role change escape hatch:** At any point during the session, if the user says "change my role", "update my role", "cambiar mi rol", "Rolle ändern", or similar → re-run Step A1 → A1b → A2 → A2b with the full question flow, update the state file, and continue from where they left off. If the user says "change my secondary role", "remove secondary role", or similar → re-run Step A1b only (skip A1 and A2).
+
+---
+
+## Step 0 — Initialize Session
+
+**Step 0-pre — Silent state check (no output to user):**
+
+Fire in a single parallel message:
+1. `read_file` → `joule-work-tailor-state.json`
+2. `ls` → check working directory for `my-joule-work-tailor.md`
+
+Determine session context:
+- **STATE = loaded** — state file found and contains a `role` field. Extract all fields into session variables.
+- **STATE = migrated** — state file not found, but `my-joule-work-tailor.md` found. Read it with `read_file`. Parse the ROLE DESCRIPTION block to infer role name and areas. Map to the closest role number from the role list. Set all list fields (installed_uuids, last_seen_catalog, skipped_skills, dismissed_skills) to empty arrays. Create a new in-memory state object.
+- **STATE = fresh** — neither file found. First-time user.
+
+Do NOT output anything to the user from this step. Proceed silently to Step 0a.
+
+> ⚠️ **Context note:** If you are currently chatting from inside another Joule Space (e.g. a customer project space), Joule Work Tailor may add cards to that space unintentionally. To keep your toolkit separate, run this skill from the **main Joule chat** — not from inside a project Space. At the end of setup, you can create a dedicated **'My JWD Toolkit'** space.
 
 **Step 0a — Catalog detection:**
 - `mcp_<hash>_search_skills` tool available → **INTERNAL mode** (SAP employees on hub.joule.only.sap)
@@ -74,6 +130,16 @@ If INTERNAL, offer:
 1. Yes
 2. No
 
+**Step 0c — Returning user fast path:**
+
+If STATE = loaded or STATE = migrated:
+- If audience is stored in state, reuse it silently (skip Step 0b entirely for EXTERNAL users).
+- Do NOT ask role questions — proceed directly to Step 1 with stored context.
+- The role/areas/flags/demo_envs from state will be used in all subsequent steps.
+
+If STATE = fresh:
+- Continue normally through Step 0b (if EXTERNAL) and Step 1.
+
 ---
 
 ## Partner Mode Adjustments
@@ -82,6 +148,8 @@ When AUDIENCE = PARTNER (EXTERNAL), apply these overrides throughout Flow A:
 
 **Role list (Step A1):** Show all 11 existing roles. Add one more:
 - **12. Partner Delivery / Implementation Consultant** — delivery, go-live, and integration work at customer sites
+
+**Secondary role (Step A1b):** Also available in PARTNER mode. Show the same extended 12-role list (minus the already-chosen primary). The "No secondary role" option is always last.
 
 **Demo environments (Step A3 Q3 — Roles 1, 5, 9, 12 with DEMOS flag):**
 Before showing landscape options, ask:
@@ -113,12 +181,35 @@ For the following role + mode combinations, **always** include the ADAPT connect
 
 If `adapt-use-case-search` skill is not already in recommendations, add it to Essential Skills. The skill and connector work together — the connector alone has no user interface.
 
-INTERNAL install: standard connector flow. Client ID: `sb-CAP_ADAPT-prod!t655084`. Authentication: Default Identity Provider.
+> **Do NOT search the Hub for the ADAPT Connector** — it may not appear in `search_mcp_servers` results. Always use the hardcoded URL and credentials below. Add it directly to the connector list regardless of Hub search output.
+
+INTERNAL install: `install_asset([{type: "connector", name: "ADAPT Connector", url: "https://emea-1-projects-adapt-prod-gcno3rpp-prod-cap-adapt-srv.cfapps.eu10-004.hana.ondemand.com/mcp"}])`. Client ID: `sb-CAP_ADAPT-prod!t655084`. Authentication: Default Identity Provider.
 EXTERNAL (PARTNER) install: Extensions → Connectors → New → Add Connector → paste URL above.
 
 ---
 
 ## Step 1 — Choose Mode
+
+**If STATE = loaded or STATE = migrated (returning user):**
+
+Announce briefly — one line, no questions:
+
+*"Running as **[ROLE]**[+ **[SECONDARY_ROLE]**] — [AREAS as comma-separated list]. Say 'change my role' anytime."*
+
+(Include the secondary role in brackets only if `HAS_SECONDARY = true`)
+
+Then ask:
+
+**What would you like to do?**
+
+1. Refresh my toolkit — discover new skills and check for updates
+2. Full setup — reconfigure everything from scratch
+
+*Type one number.*
+
+Route: 1 → Flow B (Stay Current, using stored context). 2 → Flow A (full setup — re-run A1 → A2 → A2b with questions, then continue to A3).
+
+**If STATE = fresh (first-time user):**
 
 **Which situation are you in?**
 
@@ -156,6 +247,27 @@ If AUDIENCE = PARTNER, also show:
 12. Partner Delivery / Implementation Consultant
 
 Store as **ROLE**. For option 11, use closest matching role as base.
+
+### Step A1b — Secondary Role (optional)
+
+After storing ROLE, immediately ask:
+
+**Do you wear a second hat? Adding a secondary role includes extra skills and connectors — no extra questions.**
+
+Show the same list as A1, but exclude the already-chosen role. Add a final option: "No secondary role — keep it focused."
+
+*Type one number.*
+
+- If the user picks a secondary role: store as **SECONDARY_ROLE**. Set flag `HAS_SECONDARY = true`.
+- If the user picks "No secondary role": set `HAS_SECONDARY = false`. Continue to A2.
+
+**Rules for secondary role handling:**
+- Do NOT run Step A2 questions for SECONDARY_ROLE — zero additional questions.
+- In Step A3, run the base skill queries for SECONDARY_ROLE (from `references/roles.md` → Skill Queries → Base section only). Merge results into the main recommendation list. Deduplicate by UUID/name.
+- In tiering: skills that appear in both primary and secondary base queries → promote to Essential. Skills only in secondary → Recommended unless already tiered higher.
+- In Step A5 profile generation: the Role Description should lead with the primary role and add one short line for the secondary (e.g. "Also covers [secondary role name]"). Keep within the 480-char limit — trim secondary context if needed. The Personal Instructions block should include defaults from both roles, deduplicated.
+- SECONDARY_ROLE connectors: include ESSENTIAL CONNECTORS from secondary role's MCP Queries (base only). Do NOT include demo environment connectors for secondary role unless the same landscape is already in DEMO_ENVS.
+- If the secondary role triggers the ADAPT Connector Rule (Roles 1, 7, 9, 10 in INTERNAL; Roles 1, 9, 12 in PARTNER): apply it.
 
 ### Step A2 — Role-Specific Structured Questions
 
@@ -200,7 +312,7 @@ Loop back to the relevant question, re-collect, then return here and re-display 
 ### Step A3 — Live Catalog Search
 
 **PROFILE CONTEXT CHECK — run silently before anything else, no output to the user:**
-Check if `my-jwd-tailor.md` exists in the working directory using `ls`.
+Check if `my-joule-work-tailor.md` exists in the working directory using `ls`.
 - Found → read it using `read_file`. Extract the ROLE DESCRIPTION and PERSONAL INSTRUCTIONS blocks (look for text between the `┌` and `└` box-drawing characters, or under headings containing "ROLE DESCRIPTION" and "PERSONAL INSTRUCTIONS"). Store as PREV_PROFILE = { role_description: "...", personal_instructions: "..." }.
 - Not found → PREV_PROFILE = none.
 Do NOT mention this check to the user.
@@ -257,6 +369,25 @@ Store as AI_TEMPLATES list.
 2. Suppress high-score (> 100) generalist tools from Essential tier unless role = presentation-primary.
 3. For developer roles: do NOT filter by score threshold — ABAP/CAP skills have low community scores but high role relevance.
 4. Assign tiers: **Essential** (direct match, score > 10 or clearly on-topic) / **Recommended** (secondary fit) / **Optional** (nice to have).
+
+**4b. Score each Hub skill (Match %) — compute inline, no external script needed:**
+
+For each skill, compute a **Match score (0–100)** from 5 components. The calculation uses data already available in the session — no additional API calls.
+
+| Component | Max | How to compute |
+|---|---|---|
+| **Tier base** | 35 | Essential = 35, Recommended = 20, Optional = 10 |
+| **Area overlap** | 25 | Count how many of the user's AREAS appear in the skill's `short_description` + `tags` (case-insensitive). Score = min(25, matches × 8). If Outlook enrichment was done (1c), also match against enrichment keywords. |
+| **Activity match** | 20 | Count how many of the user's activity FLAGS (DEMOS, PRESENTATIONS, CODING, RESEARCH) are reflected in the skill's description/tags. Score = min(20, matches × 7). |
+| **Community signal** | 10 | min(10, download_count × 0.005 + community_score × 0.15). Clamp negatives to 0. |
+| **Recency** | 10 | Created ≤7 days ago: 10 · ≤14d: 8 · ≤30d: 5 · ≤60d: 2 · else: 0 |
+
+**Total** = sum of all components, capped at 100. Display as integer percentage (e.g. "87%").
+
+**Sort** skills within each tier by Match % descending — highest match first.
+
+**Connectors, demo environment connectors, OneAI spaces, GitHub skills, and AI-generatable templates** do NOT get a Match score — they are pre-curated by role. Only Hub skills (from `search_skills` or `search_mcp_servers` results) receive a score. Display **"—"** in the Match column for any non-Hub item that appears in a skills table.
+
 5. **Determine source for each item:**
    - Hub skill: `featured: true` OR author name starts with "SAP" or contains "@sap.com" → **SAP Official**; otherwise → **Community**.
    - General MCP connector (from Hub `search_mcp_servers`): results come from the SAP LeanIX registry → always **SAP Official**.
@@ -268,6 +399,33 @@ Store as AI_TEMPLATES list.
 6. Cap: 8 Essential + 10 Recommended + 5 Optional skills; 4 Essential + 4 Recommended general connectors.
 7. **Demo environment connectors are NOT subject to the connector cap** — include all entries from DEMO_CONNECTOR_LIST.
 8. If a query returns 0 results: retry with the last word removed. If still 0, skip silently.
+9. **NEW classification (requires state):** If STATE has `last_seen_catalog`, classify each Hub skill:
+   - UUID NOT in `last_seen_catalog` → mark as **NEW** (prefix name with 🆕 in the table)
+   - UUID in `last_seen_catalog` → **KNOWN** (no prefix)
+   If STATE = fresh (no `last_seen_catalog`), treat all skills as KNOWN (first run has no baseline to compare).
+   Collect ALL Hub skill UUIDs found in this search into `current_catalog_uuids` — this will be saved to state in Step A6.
+10. **Filter dismissed (requires state):** Remove any skill whose UUID is in `dismissed_skills`. Do not mention removed skills to the user.
+11. **Suppress skipped at same version (requires state):** For each entry in `skipped_skills`: if the skill's current catalog version matches the stored `version` → suppress from results. If the version is DIFFERENT → re-offer the skill and prefix its name with 🔄 in the table ("updated since you last saw it").
+
+**12. Fallback chain — if results are thin after filtering:**
+
+After steps 9–11, count remaining Hub skills in Essential + Recommended tiers.
+
+- **≥ 3 skills** → normal flow. No fallback needed.
+- **< 3 skills** → activate fallback chain:
+
+  **Fallback A — Surface NEW skills regardless of tier:**
+  Take all skills classified as 🆕 NEW (from step 9) that were filtered out by tier assignment (scored too low for Essential/Recommended). Re-add up to 5 to the RECOMMENDED tier, sorted by Match % descending. Mark each with `💡 Suggested` source label. These are new additions to the Hub that don't strongly match the user's profile but are worth seeing.
+
+  **Fallback B — Re-offer previously skipped skills at new versions:**
+  If Fallback A still yields < 3 total: check `skipped_skills` from state for entries whose catalog version has CHANGED since the user last saw them. Re-add up to 5, sorted by Match %. Mark each with 🔄 and a note: *"Updated since you last saw it."*
+
+  **Fallback C — Broaden the search:**
+  If still < 3 total: run ONE additional search with a broader query (drop area-specific keywords, search by the user\'s actual role name from A1: e.g. `search_skills(query: "<ROLE name>")`). Apply the same scoring and tiering. Add any new results not already in the list.
+
+  **If all fallbacks exhausted and still 0 skills:** show: *"No new skills match your profile right now. Run Joule Work Tailor again in a few weeks — the Hub is growing fast."*
+
+  The fallback chain reuses already-scored data from steps 4–4b wherever possible — Fallback A and B add zero API calls. Only Fallback C makes one additional search.
 
 **ADAPT connector:** Apply the ADAPT Connector Rule (see above) after tiering — prepend to ESSENTIAL CONNECTORS where the rule applies.
 
@@ -377,10 +535,69 @@ After collecting all 5 answers:
 1. Translate each selection into a concrete instruction sentence.
 2. Append a **"Format and style preferences"** subsection to the PERSONAL INSTRUCTIONS block. Include only non-default selections — skip answers that match the role-based defaults already in the profile to avoid redundancy.
 3. Show the updated PERSONAL INSTRUCTIONS block with the new subsection highlighted (use a `➕ Added:` marker).
-4. Update `my-jwd-tailor.md` with the refined profile.
-5. Continue to **2 — RECOMMENDATIONS TABLE**.
+4. Update `my-joule-work-tailor.md` with the refined profile.
+5. Continue to **1c — Profile Enrichment**.
 
-If 2: skip to **2 — RECOMMENDATIONS TABLE** directly.
+If 2: continue to **1c — Profile Enrichment** below.
+
+---
+
+**1c — PROFILE ENRICHMENT FROM OUTLOOK (optional)**
+
+After refinement (or if the user skipped 1b), offer to enrich the profile with real work context from Outlook. This is the highest-value personalisation step — it turns a generic role profile into one that reflects the user's actual daily work.
+
+*"One more thing — I can scan your recent emails and calendar to understand what you actually work on day-to-day. This helps Joule give you answers tuned to your real projects and tasks, not just your job title. Takes about 15 seconds."*
+
+1. Yes — scan my Outlook
+2. No — my profile is good as is
+
+*Type one number.*
+
+**If 1:**
+
+Fire in a **single parallel message**:
+- `list_emails` top: 20
+- `list_emails` folder: "sentitems", top: 20
+- `list_calendar_events` limit: 15
+
+**Empty-result handler:** If ALL three calls return 0 results (no emails and no calendar events found), show: *"I couldn\'t find any recent emails or calendar events to analyse. Your profile has been set up based on your role selection — you can re-run enrichment anytime after connecting Outlook."* Set `PROFILE_ENRICHED = false`. Continue to recommendations. Do NOT attempt to generate enrichment sentences from empty data.
+
+**Extract from the results (do NOT retain full email/calendar content — extract and discard):**
+- **Work patterns** — recurring types of work (architecture presentations, demo preparation, customer workshops, product evaluations, internal reviews)
+- **Products and technologies** — specific SAP products, tools, and platforms mentioned frequently
+- **Stakeholders** — types of people the user interacts with (customers, product managers, partners, executives)
+- **Activities** — what the user DOES (writes proposals, builds demos, reviews architecture, answers RFPs, prepares decks)
+- **Context clues** — industries, regions, or accounts mentioned repeatedly
+
+**Generate 3–6 enrichment sentences** to add to the PERSONAL INSTRUCTIONS block. Each sentence should be a concrete, actionable instruction for Joule — not a vague description. Format:
+
+```
+OUTLOOK ENRICHMENT — based on your recent activity:
+
+➕ "Regularly prepares BDC and Datasphere architecture presentations for enterprise customers"
+➕ "Frequently works with Product Management on HANA Cloud and SAP Databricks roadmap items"  
+➕ "Active in presales demo preparation — references SIX landscapes C39 and GLA-26Q2"
+➕ "Coordinates with partners on co-innovation projects involving SAP AI Core"
+➕ "Recent focus areas: data mesh, medallion architecture, SAP Analytics Cloud planning"
+```
+
+Show the enrichment sentences and ask:
+
+*"These are based on your recent Outlook activity. Want me to add them to your profile?"*
+
+1. Add all
+2. Let me pick which ones (type numbers)
+3. Skip — don't add any
+
+*Type one number.*
+
+If 1 or 2: append selected sentences to the PERSONAL INSTRUCTIONS block under a **"Work context (from Outlook)"** subsection. Show the updated block with `➕ Added:` markers. Update `my-joule-work-tailor.md`.
+
+Set session variable `PROFILE_ENRICHED = true`.
+
+**If 2 (skipped enrichment):** set `PROFILE_ENRICHED = false`. Continue to recommendations.
+
+**Privacy note:** The skill does NOT store email content, calendar details, or any Outlook data. It extracts keywords and patterns, generates enrichment sentences, and discards all raw data immediately. Only the generated sentences are saved in the profile.
 
 ---
 
@@ -393,17 +610,19 @@ If 2: skip to **2 — RECOMMENDATIONS TABLE** directly.
 🤖 **Create with AI** — generated and installed by Joule for your exact profile
 
 > SAP Official skills are validated by SAP. Community and GitHub skills are contributed externally — review before use.
+>
+> 🆕 = new on the Hub since your last run · 🔄 = updated since you last saw it · Skills you previously dismissed are hidden automatically.
 
 ```
 ESSENTIAL SKILLS
-| # | Name | Source | What it does | Link |
-|---|------|--------|-------------|------|
+| # | Name | Match | Source | What it does | Link |
+|---|------|-------|--------|-------------|------|
 
 RECOMMENDED SKILLS
-| # | Name | Source | What it does | Link |
+| # | Name | Match | Source | What it does | Link |
 
 OPTIONAL SKILLS
-| # | Name | Source | What it does | Link |
+| # | Name | Match | Source | What it does | Link |
 
 ESSENTIAL CONNECTORS
 | # | Name | Source | What it does | URL |
@@ -438,7 +657,7 @@ Number rows **continuously** across all sections. The user references any item b
 
 If updates found, add UPDATES AVAILABLE section.
 
-Save full output (profile + recommendations) as `my-jwd-tailor.md` using `write_file`. For roles with DEMOS flag, append a **DEMO ENVIRONMENT QUICK-REFERENCE** section listing all DEMO_CONNECTOR_LIST entries (name, landscape, MCP endpoint) plus access instructions: "Before connecting: close ALL browser tabs. Log in fresh at experience-agent.cloud.sap with your own or demo user. Then add each connector."
+Save full output (profile + recommendations) as `my-joule-work-tailor.md` using `write_file`. For roles with DEMOS flag, append a **DEMO ENVIRONMENT QUICK-REFERENCE** section listing all DEMO_CONNECTOR_LIST entries (name, landscape, MCP endpoint) plus access instructions: "Before connecting: close ALL browser tabs. Log in fresh at experience-agent.cloud.sap with your own or demo user. Then add each connector."
 
 ---
 
@@ -453,6 +672,8 @@ How would you like to proceed?
 
 Type one number.
 ```
+
+> Say **dismiss N** to permanently hide a skill you don't want. Say **dismiss 3, 7** to hide multiple. Dismissed skills never appear again.
 
 ---
 
@@ -505,7 +726,7 @@ IMPROVED PERSONAL INSTRUCTIONS  [copy]
 [X] / 1500
 ```
 
-4. Update `my-jwd-tailor.md` with the improved profile blocks (overwrite the profile section, keep the recommendations).
+4. Update `my-joule-work-tailor.md` with the improved profile blocks (overwrite the profile section, keep the recommendations).
 
 5. Show the install CTA again so the user can continue:
 
@@ -525,7 +746,7 @@ If PREV_PROFILE ≠ none at the start of Step A5, immediately show the diff comp
 ### Step A6 — Install
 
 For option 1 (Essential Bundle) or option 2 (choose items): proceed as below.
-For option 3 (done): *"Your profile and recommendations are saved in my-jwd-tailor.md. Come back anytime to install. Open a new conversation to apply your new personalization profile."* End.
+For option 3 (done): *"Your profile and recommendations are saved in my-joule-work-tailor.md. Come back anytime to install. Open a new conversation to apply your new personalization profile."* End.
 
 **Install flow (INTERNAL) — RESILIENT: always continue on failure, never abort.**
 
@@ -606,6 +827,30 @@ If retry: re-attempt each failed item using the same flow. For OAuth errors, rem
 
 After demo connectors install: *"To activate each demo connector: log in at experience-agent.cloud.sap, then open a new conversation."*
 
+**Save state (silent — no output to user):**
+
+After the install summary (and retry if applicable), save the full state to `joule-work-tailor-state.json` using `write_file`. Build the JSON object with:
+
+- `schema_version`: 1
+- `last_run`: current ISO timestamp
+- `last_run_mode`: "setup"
+- `audience`: AUDIENCE from Step 0
+- `role`: ROLE name from A1 (or from state if returning user)
+- `role_number`: ROLE number
+- `secondary_role`: SECONDARY_ROLE name (or `null` if none)
+- `secondary_role_number`: SECONDARY_ROLE number (or `null` if none)
+- `areas`: AREAS array
+- `flags`: FLAGS object
+- `demo_envs`: DEMO_ENVS array
+- `language`: LANGUAGE detected in A3
+- `installed_uuids`: merge existing state `installed_uuids` (if any) with UUIDs of skills successfully installed in this session
+- `installed_connectors`: merge existing with connectors installed in this session (by name)
+- `last_seen_catalog`: `current_catalog_uuids` collected in Step A3 step 9
+- `skipped_skills`: for each skill shown in A5 that was NOT installed and NOT already in `dismissed_skills`, add `{ "uuid": "...", "version": "current catalog version", "name": "...", "skipped_at": "ISO timestamp" }`. Merge with existing `skipped_skills` — update version if UUID already exists, add new entries, keep old entries for skills not shown this run.
+- `dismissed_skills`: carry forward from existing state (only modified by the dismiss command)
+
+Write as formatted JSON (indent 2) for readability. Do not mention the state save to the user.
+
 ### Step A7 — Personal OneAI Agent (INTERNAL mode only, optional)
 
 After the install summary is shown, offer personal OneAI agent creation.
@@ -669,12 +914,14 @@ After summary, ask:
 
 After the install summary (and after Step A7 if applicable), offer once to both INTERNAL and EXTERNAL users:
 
+**Before calling `create_space`:** Check if the current conversation is running inside an existing Space (e.g. a project space). If yes, warn the user: *"You are currently in a Joule Space. Creating a new 'My JWD Toolkit' space will add it to your Spaces panel — it will NOT affect the current space. Continue?"* Present as: `1. Yes — create the new space` / `2. No — skip`. Only proceed if confirmed.
+
 ---
 
 **Would you like me to create a 'My JWD Toolkit' space to save your profile and recommendations?**
 
 1. Yes — create a dedicated space for my toolkit
-2. No — the results are already saved in `my-jwd-tailor.md`
+2. No — the results are already saved in `my-joule-work-tailor.md`
 
 *Type one number.*
 
@@ -686,7 +933,7 @@ If 1:
    - **Profile card** (hint: text, size: M, intent: "Show the user's Role Description and Personal Instructions profile blocks generated in this session")
    - **Skills card** (hint: text, size: L, intent: "Show the full skills recommendations table from this session organised by tier: Essential, Recommended, Optional")
    - **Connectors card** (hint: text, size: M, intent: "Show the installed connectors and demo environment endpoints from this session")
-3. Confirm: *"✅ Space 'My JWD Toolkit — [ROLE]' created. Find it in your Spaces panel. Run jwd-tailor again anytime to refresh it — select 'Stay current' to check for new skills."*
+3. Confirm: *"✅ Space 'My JWD Toolkit — [ROLE]' created. Find it in your Spaces panel. Run Joule Work Tailor again anytime to refresh it — select 'Stay current' to check for new skills."*
 
 **Important:** Do NOT add cards to any Space that is already open/active in the current conversation (e.g. a customer project space). Always create a NEW dedicated Space via `create_space`.
 
@@ -695,15 +942,44 @@ If 1:
 ## Flow B — Stay Current
 
 ### Step B1 — Audit
-Fire both in a **single message** (INTERNAL only):
+
+Fire in a **single message** (INTERNAL only):
 - `mcp_<hash>_list_my_skills()` + `mcp_<hash>_check_updates(skills: [...])`
-Store OUTDATED and INSTALLED_UUIDS.
+- If `joule-work-tailor-state.json` was not already loaded in Step 0, read it now.
+
+Store OUTDATED and INSTALLED_UUIDS. Merge `installed_uuids` from state (if available) with the live `list_my_skills` result — the union gives the most complete installed set.
 
 ### Step B2 — Quick Check
 
-*"What is your role? (type a number from the role list, or 'same')"*
+**If STATE = loaded (returning user — most common path for Flow B):**
 
-If same:
+Skip the role question and the "anything new" question entirely — use stored role, areas, and flags. Ask only:
+
+**Refresh how Joule answers you?**
+
+1. Yes — regenerate and show what changed
+2. No — skip to new skills
+
+*Type one number.*
+
+If 1:
+- Read `my-joule-work-tailor.md` if it exists → set PREV_PROFILE.
+- Regenerate profile from stored ROLE + flags.
+- Show diff (if PREV_PROFILE found) or new profile blocks (same format as Step A5).
+
+If 2: proceed directly to Step B3.
+
+**If STATE = fresh or migrated:**
+
+**What is your role?**
+
+1. Same role as before
+2. Change role — show me the full list
+3. Change secondary role only
+
+*Type one number.*
+
+If 3: re-run Step A1b only. If 2: re-run Step A1 with the full role list. If 1:
 
 **Anything new in how you work lately?**
 
@@ -718,13 +994,21 @@ If same:
 2. No
 
 *Type one number.* — if 1:
-- Run file check: does `my-jwd-tailor.md` exist? If yes, read and set PREV_PROFILE.
+- Run file check: does `my-joule-work-tailor.md` exist? If yes, read and set PREV_PROFILE.
 - Regenerate profile from current ROLE + flags.
 - Show diff (if PREV_PROFILE found) or new profile blocks.
 - Show invite sentence if no previous profile.
+- If `profile_enriched` is false in state, OR `last_enriched` is older than 30 days, offer enrichment: *"Want me to scan your recent Outlook activity to refresh your profile context? This keeps your profile current with what you're actually working on."* (1. Yes / 2. No). If yes, run the same enrichment flow as Step 1c in Flow A.
 
 ### Step B3 — Discover
-Run same parallel searches as A3. Apply the same source-detection rule (step 5 in A3) to all results. Remove INSTALLED_UUIDS. Sort by `created_at` desc. Take top 15.
+
+Run same parallel searches as A3, using stored role, areas, and flags for the search queries. Apply the same source-detection rule (step 5 in A3) to all results. Remove INSTALLED_UUIDS. Sort by `created_at` desc. Take top 15.
+
+**Apply state-aware filters (same as A3 steps 9–12, including the fallback chain):**
+- **NEW classification:** compare result UUIDs against `last_seen_catalog` from state. Mark new UUIDs with 🆕.
+- **Filter dismissed:** remove any UUID in `dismissed_skills`.
+- **Suppress skipped at same version:** suppress skills in `skipped_skills` at the same version. Re-offer (🔄) if the version changed.
+- Collect `current_catalog_uuids` for state save.
 
 For demo environment connectors (roles 1, 5, 9): read `references/demo-environments.md` and compare all landscape entries against the user's AREAS and previously stored DEMO_ENVS. Surface any landscape with new Live services not in DEMO_ENVS as "NEW DEMO ENVIRONMENT AVAILABLE."
 Note: connector install history is not accessible from list_my_skills — surface new entries and let the user verify against Extensions → Connectors to avoid duplicates.
@@ -742,13 +1026,13 @@ Include a **Source** column (`SAP Official` / `Community` / `GitHub` / `Create w
 🤖 **Create with AI** — generated and installed by Joule for your exact profile
 
 ```
-jwd-tailor Update Report
+Joule Work Tailor Update Report
 
 # UPDATES AVAILABLE ([count])
 | # | Skill | Source | Your version | Latest |
 
 # NEW SKILLS YOU DON'T HAVE YET
-| # | Name | Source | Published | What it does |
+| # | Name | Match | Source | Published | What it does |
 
 # CONNECTORS YOU MAY NOT HAVE YET
 | # | Name | Source | What it does | URL |
@@ -764,7 +1048,7 @@ jwd-tailor Update Report
 ```
 
 Number every row. If profile refresh requested, show profile diff or new blocks (same rules as Step A5).
-Save as `my-jwd-tailor-update.md`.
+Save as `my-joule-work-tailor-update.md`.
 
 **How would you like to proceed?**
 
@@ -774,13 +1058,51 @@ Save as `my-jwd-tailor-update.md`.
 
 *Type one number.*
 
+> Say **dismiss N** to permanently hide a skill. Dismissed skills never appear again.
+
 Apply the same **resilient install flow** as Step A6 (continue on failure, show summary, offer retry).
+
+**Save state (silent — no output to user):**
+
+After the install summary, save full state to `joule-work-tailor-state.json` — same schema and merge logic as the Flow A state save (after Step A6). Set `last_run_mode` to `"update"`. Update `last_seen_catalog` with `current_catalog_uuids`. Merge newly installed UUIDs into `installed_uuids`. Update `skipped_skills` with skills shown but not installed.
 
 ---
 
 ## CUSTOMER TRACK
 
 *For users at SAP customer companies using Joule Work as a daily productivity and AI tool.*
+
+### CT0 — Returning Customer Fast Path
+
+**If STATE = loaded and `audience` = "CUSTOMER":**
+
+Announce briefly — one line:
+
+*"Running as **[ROLE name]**. Say 'change my role' anytime."*
+
+Then ask:
+
+**What would you like to do?**
+
+1. Refresh my toolkit — discover new skills since last time
+2. Full setup — reconfigure everything from scratch
+
+*Type one number.*
+
+**If 1 → Customer Refresh (CT-B):**
+1. Run CT2 catalog search using stored CUSTOMER_ROLE and areas.
+2. Apply state-aware filters (same as A3 steps 9–12, including the fallback chain):
+   - **NEW classification:** compare result UUIDs against `last_seen_catalog` from state. Mark new with 🆕.
+   - **Filter dismissed:** remove any UUID in `dismissed_skills`.
+   - **Suppress skipped at same version:** suppress skills in `skipped_skills` at the same version. Re-offer (🔄) if version changed.
+   - **Fallback chain:** if < 3 results after filtering, run Fallback A → B → C.
+3. Present update report (same format as B4 — UPDATES AVAILABLE + NEW SKILLS sections, source legend, dismiss hint).
+4. Install CTA: Update everything / Choose / Done.
+5. Save state (same logic as CT4 state save — update `last_seen_catalog`, merge `installed_uuids`, update `skipped_skills`). Set `last_run_mode` to `"update"`.
+
+**If 2 → Full setup:** re-run CT1 → CT2 → CT3 → CT4 → CT5 with full question flow, overwriting stored state.
+
+**If STATE = fresh or STATE = migrated:** continue to CT1 normally.
 
 ### CT1 — Role
 
@@ -801,6 +1123,8 @@ Map to role in `references/roles.md`: 1→Role14, 2→Role15, 3→Role16, 4→Ro
 
 Search the public catalog: `web_search(query: "site:skills.cloud.sap <query>")` using base queries for CUSTOMER_ROLE from `references/roles.md`.
 
+**Retry logic:** If a query returns 0 results, retry with the last word removed. If still 0, fallback to `web_search(query: "SAP Joule skill <query>")`. If all fallbacks return 0, skip that query silently. After all searches, always append: *"Browse the full public catalog at [skills.cloud.sap](https://skills.cloud.sap)."*
+
 **Do NOT include:**
 - SIX demo environment connectors
 - SAP-internal MCP endpoints
@@ -816,7 +1140,7 @@ Generate profile for CUSTOMER_ROLE (same logic as A5, using role defaults from `
 
 Show profile blocks at the top, using the same format and invite sentence as Step A5 (profile first, recommendations below).
 
-Save as `my-jwd-tailor.md` using `write_file`. Omit demo connectors, GitHub, AI-generatable, and OneAI sections.
+Save as `my-joule-work-tailor.md` using `write_file`. Omit demo connectors, GitHub, AI-generatable, and OneAI sections.
 
 ### CT4 — Install
 
@@ -830,22 +1154,65 @@ Use EXTERNAL install path: provide numbered download links and manual steps (Ext
 
 End: *"Your Joule Work is now set up for your role. Open a new conversation to start using your new skills."*
 
+
+**Save state (silent — no output to user):**
+
+After the install summary, save the full state to `joule-work-tailor-state.json` using `write_file`. Build the JSON object with:
+- `schema_version`: 1
+- `last_run`: current ISO timestamp
+- `last_run_mode`: "setup"
+- `audience`: "CUSTOMER"
+- `role`: CUSTOMER_ROLE name from CT1
+- `role_number`: CUSTOMER_ROLE number (13–17)
+- `areas`: inferred from role (e.g. Role14 = ["Finance"])
+- `flags`: empty object (Customer Track does not collect activity flags)
+- `demo_envs`: empty array
+- `language`: LANGUAGE detected from conversation
+- `installed_uuids`: UUIDs of skills successfully installed in this session
+- `installed_connectors`: empty array
+- `last_seen_catalog`: all skill UUIDs found in CT2 search results
+- `skipped_skills`: skills shown in CT3 but NOT installed
+- `dismissed_skills`: carry forward from existing state (only modified by the dismiss command)
+- `profile_enriched`: false
+- `last_enriched`: null
+
+Write as formatted JSON (indent 2). Do not mention the state save to the user.
+
 ### CT5 — Optional: Save to Joule Space
 
 After install, offer once:
+
+**Before calling `create_space`:** Check if the current conversation is running inside an existing Space. If yes, warn the user: *"You are currently in a Joule Space. Creating a new 'My JWD Toolkit' space will add it to your Spaces panel — it will NOT affect the current space. Continue?"* Present as: `1. Yes — create the new space` / `2. No — skip`. Only proceed if confirmed.
 
 ---
 
 **Would you like me to create a 'My JWD Toolkit' space to save your recommendations?**
 
 1. Yes — create a space for my toolkit
-2. No — the results are saved in `my-jwd-tailor.md`
+2. No — the results are saved in `my-joule-work-tailor.md`
 
 *Type one number.*
 
 ---
 
 If 1: follow the same flow as Step A8 above, adapted for the customer role name.
+
+---
+
+## Dismiss Command
+
+When the user says "dismiss N", "dismiss 3, 7", "hide N", "ocultar N", "ausblenden N", or similar at any point after recommendations are shown:
+
+1. Parse the number(s). Look up the corresponding UUID(s) from the most recent recommendations (the numbered rows from Step A5 or B4).
+2. For each UUID: add to `dismissed_skills` in the state object.
+3. Save updated state to `joule-work-tailor-state.json` immediately (read current file → merge dismissed list → write).
+4. Confirm: *"Hidden — [skill name] won't appear again."*
+
+**Undo dismiss:** If the user says "undo dismiss", "undo dismiss N", or "show dismissed":
+- Specific number/name: remove that UUID from `dismissed_skills`, save state, confirm.
+- General ("show dismissed"): list all dismissed skill names. The user can say "restore N" to un-dismiss.
+
+**Important:** Dismiss does NOT uninstall — it only hides from future recommendations.
 
 ---
 
@@ -857,4 +1224,4 @@ If 1: follow the same flow as Step A8 above, adapted for the customer role name.
 - **Internal hub (SAP employees):** hub.joule.only.sap
 - **SIX demo hub:** https://six-mcp-hub.cfapps.eu10-004.hana.ondemand.com/#landscapes
 - **OneAI (SAP employees):** https://oneai.cfapps.eu10-004.hana.ondemand.com
-- **OAuth error fix:** close ALL browser tabs → log in fresh at experience-agent.cloud.sap → retry connector installperience-agent.cloud.sap → retry connector install
+- **OAuth error fix:** close ALL browser tabs → log in fresh at experience-agent.cloud.sap → retry connector install

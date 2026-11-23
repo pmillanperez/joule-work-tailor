@@ -1,13 +1,13 @@
-# jwd-tailor
+# Joule Work Tailor
 
 **Set up Joule Work for your role — in under 5 minutes.**
 
-jwd-tailor finds and installs the right skills, connectors, and demo environments for your role. It generates a personalization profile so Joule knows how to answer you. It surfaces shared agents, GitHub skills, and AI-generated custom tools — all through numbered questions you answer with a single digit.
+Joule Work Tailor finds and installs the right skills, connectors, demo environments, personalization profile, and agents — just answer numbered questions.
 
 | | |
 |---|---|
 | **Author** | Pedro Millan · pedro.millan@sap.com |
-| **Version** | 1.9.2 |
+| **Version** | 2.0.3 |
 | **License** | Apache 2.0 |
 | **Catalog** | [skills.cloud.sap](https://skills.cloud.sap) |
 
@@ -34,28 +34,31 @@ Answer a few numbered questions (role → areas → activities → demo environm
 
 Every item shows its source: ✅ **SAP Official** · 🌐 **Community** · 🐙 **GitHub** · 🤖 **Create with AI**
 
-### 2. Personalization profile — generated automatically
+### 2. Multi-role support
+Add a secondary role with zero extra questions. The skill merges both roles' skill lists and deduplicates — skills that appear in both are promoted to Essential.
+
+### 3. Personalization profile — generated automatically
 Generates a **Role Description** and **Personal Instructions** block tailored to your role and activities. Copy and paste into **Settings → Personalization**. Already have a profile? Paste it and the skill improves it rather than replacing it — with a full diff showing what was kept, updated, added, and removed.
 
-### 3. Profile refinement (optional)
+### 4. Profile refinement (optional)
 After the profile is generated, an optional 5-question sequence lets you sharpen your Personal Instructions: response language, format, technical depth, length, and tone.
 
-### 4. Demo environment connectors *(Solution Advisors, Data & AI, Partners)*
+### 5. Demo environment connectors *(Solution Advisors, Data & AI, Partners)*
 Looks up the exact MCP endpoints for your selected SIX demo landscapes (C39, GLA-26Q2, and others) and adds them to your recommendations. Always installs the Experience Agent connector first.
 
-### 5. Shared knowledge bases *(SAP employees only)*
+### 6. Shared knowledge bases *(SAP employees only)*
 Surfaces relevant shared SAP OneAI spaces for your role — pre-loaded AI agents you can chat with immediately, no installation required.
 
-### 6. GitHub skills *(employees and partners)*
+### 7. GitHub skills *(employees and partners)*
 Points you to curated skill repositories on github.tools.sap (internal) and github.com (public) that aren't in the Hub catalog.
 
-### 7. AI-generated custom skills *(SAP employees)*
+### 8. AI-generated custom skills *(SAP employees)*
 Generates personalised custom skills for you after the main install: SAP Product Expert, Presales Strategy Partner, Application Design Coach, or Demo Prep Assistant.
 
-### 8. Personal OneAI agent *(SAP employees)*
+### 9. Personal OneAI agent *(SAP employees)*
 Optionally creates a personal AI assistant space on OneAI, pre-configured for your role.
 
-### 9. 'My JWD Toolkit' Space
+### 10. 'My JWD Toolkit' Space
 At the end of setup, offers to create a persistent Joule Space with your profile, recommended skills, and connectors.
 
 ---
@@ -80,13 +83,15 @@ At the end of setup, offers to create a persistent Joule Space with your profile
 ## Installation
 
 ### From skills.cloud.sap
-Search for `jwd-tailor` and install directly.
+Search for `joule-work-tailor` and install directly.
+
+### Via CLI
+```bash
+npx skills add pmillanperez/joule-work-tailor --skill joule-work-tailor
+```
 
 ### Manual
-```bash
-npx skills add pmillanperez/jwd-tailor-skill --skill jwd-tailor
-```
-Or download the ZIP and go to **Extensions → Skills → New → Upload**.
+Download the ZIP and go to **Extensions → Skills → New → Upload**.
 
 ### Requirements
 - Joule Work Desktop
@@ -98,7 +103,7 @@ Or download the ZIP and go to **Extensions → Skills → New → Upload**.
 
 ## How to trigger it
 
-**English:** `equip my JWD` · `tailor JWD to my role` · `personalize joule work` · `what skills should I install` · `set up my demo environments` · `set up Joule as a partner` · `I work at an SAP customer`
+**English:** `Joule Work Tailor` · `joule-work-tailor` · `equip my JWD` · `tailor JWD to my role` · `set up Joule Work for my role` · `tailor my Joule Work` · `personalize joule work` · `what skills should I install` · `set up my demo environments` · `set up Joule as a partner` · `I work at an SAP customer`
 
 **German:** `JWD einrichten` · `Joule für meine Rolle anpassen` · `Joule Work personalisieren` · `welche Skills brauche ich`
 
@@ -106,20 +111,24 @@ Or download the ZIP and go to **Extensions → Skills → New → Upload**.
 
 ---
 
-## What's new in v1.9.2
+## What's new in v2.0.3
 
-- **Bug fix** — Data & AI Specialist (Role 5) in partner mode now correctly asks for SIX demo access before showing landscape options
+- **Multi-role support** — add a secondary role with zero extra questions; skill lists are merged and deduplicated
+- **Fix: ADAPT Connector** — explicit `install_asset` call added for INTERNAL mode; ADAPT is never searched on the Hub
+- **Fix: Flow B role selection** — numbered list instead of free-text `'same'`; option to change secondary role only
+- **Fix: T3 Application Design Coach** — `{CODING_PLATFORM}` placeholder now correctly injected into generated skill body
+- **Fix: I4M landscape URL** — corrected `i4w` → `i4m` in MCP endpoint
+- **Fix: duplicate Manual Install block** removed from SKILL.md
+- **Reference catalog versioning** — agents.md and roles.md now carry an independent catalog version header
 
-## What's new in v1.9.1
+## What's new in v2.0.0
 
-- **Profile refinement** — optional 5-question sequence (language · format · depth · length · tone) sharpens your Personal Instructions after the profile is generated
-
-## What's new in v1.9.0
-
-- **Auto-install for external users** — partner/customer flows attempt GitHub → `create_skill` auto-install before falling back to manual steps
-- **'My JWD Toolkit' Space** — persistent Joule Space created at end of setup
-- **Emoji source legend** — ✅ SAP Official / 🌐 Community / 🐙 GitHub / 🤖 Create with AI
-- **Context safety warning** — warns users to run from main Joule chat
+- **State persistence** — saves your role, areas, and installed items to `joule-work-tailor-state.json`; returning users skip re-questioning and see only what's changed since last run
+- **NEW / Updated badges** — skills added to the catalog since your last setup are flagged with `🆕 NEW` or `🔄 Updated` in recommendation tables
+- **Dismiss permanently** — type `dismiss N` to hide a skill you don't want; `undo dismiss` and `show dismissed` to manage your list
+- **Outlook enrichment** — reads recent emails and calendar events to infer additional role context and improve recommendations
+- **Match scoring (%)** — each recommendation includes a 5-component score: tier base weight, area overlap, activity signals, community popularity, and recency
+- **Fallback chain** — 3-tier relaxation when filters return too few results
 
 ---
 

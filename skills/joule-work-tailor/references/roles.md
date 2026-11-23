@@ -1,5 +1,7 @@
 # Role Configuration — Structured Questions, Queries, Personalization Defaults
 
+> **Catalog version: 2.0.2** (independent of SKILL.md version — update this when any role definition changes)
+
 ## HOW QUESTIONS WORK
 
 Every question uses **standard markdown numbered list syntax** (`1.` `2.` `3.`). The user types only numbers.
@@ -143,7 +145,7 @@ CONTENT_ADAPT: + `adapt use case`, `content personalization`, `customer proof`
 - Avoid SAP internal jargon in customer-facing content
 - When DEMOS flag is set, include connected landscape names in the generated Role Description block
 
-### Agent & GitHub Catalog (v1.8.0)
+### Agent & GitHub Catalog
 **OneAI Spaces (Essential):** Ask ONE360, Product Knowledge (per AREAS), Melody Help, [Ask Services] Cloud ERP
 **OneAI Spaces (Recommended):** ACTION — Meeting Minutes, [Ask Services] Value Acceleration
 **GitHub Skills:** SAP Joule Module (Community) — github.com/vigneshbarani24/sap-superpowers (EXTERNAL only)
@@ -201,7 +203,7 @@ AREAS includes 7 (BTM): + `LeanIX enterprise`, `process mining`, `Signavio`
 - Reference official SAP architecture guidelines where applicable
 - Include constraints and dependencies in recommendations
 
-### Agent & GitHub Catalog (v1.8.0)
+### Agent & GitHub Catalog
 **OneAI Spaces (Essential):** Product Knowledge BTM, Product Knowledge ERP, Product Knowledge Business Suite
 **OneAI Spaces (Recommended):** ACTION — Integration Suite use case (if BAIP Tech Foundation)
 **GitHub Skills:** SAP Joule Capability — github.com/SAP/custom-agentic-cookbook (EXTERNAL only)
@@ -249,11 +251,11 @@ FOCUS includes deal structuring (Q1=3): + `pricing deal`, `TCO ROI`
 - Label estimates vs. confirmed data clearly
 - Default to executive-level language; expand only when asked
 
-### Agent & GitHub Catalog (v1.8.0)
+### Agent & GitHub Catalog
 **OneAI Spaces (Essential):** Ask ONE360, [Ask Services] Cloud ERP, APM Pricing Agent
 **OneAI Spaces (Recommended):** [Ask Services] Value Acceleration, Melody Help
 **GitHub Skills:** None specific
-**AI-Generatable Templates:** T2 (Presales Strategy Partner if PRESENTATIONS or RESEARCH) — *Role 3 is now included in T2 eligibility per SKILL.md update*
+**AI-Generatable Templates:** T2 (Presales Strategy Partner if PRESENTATIONS or RESEARCH) — see agents.md Section 3 for full T2 role eligibility
 **Personal Agent Template:** Role 1 base (substitute role name)
 
 ---
@@ -299,7 +301,7 @@ PROJECT_MGMT: + `project checklist`, `cutover planning`
 - Include SAP Activate phase context where relevant
 - Be precise with configuration paths and object names
 
-### Agent & GitHub Catalog (v1.8.0)
+### Agent & GitHub Catalog
 **OneAI Spaces (Essential):** Product Knowledge ERP, BASE
 **OneAI Spaces (Recommended):** Product Knowledge HCM (if SuccessFactors), Product Knowledge Spend (if Ariba)
 **GitHub Skills:** None specific
@@ -360,7 +362,7 @@ CODING: + `CAP cloud application`, `BTP deploy`, `Python data`
 - Distinguish SAP Business AI (application-level) from SAP AI Core (infrastructure) from AI Foundation (developer toolkit)
 - Include code examples when relevant to data engineering or AI topics
 
-### Agent & GitHub Catalog (v1.8.0)
+### Agent & GitHub Catalog
 **OneAI Spaces (Essential):** Golden Ticket to Data Products, Cloud Reporting
 **OneAI Spaces (Recommended):** ACTION — Integration Suite use case, Product Knowledge ERP
 **GitHub Skills:** Joule A2A Agent — github.com/The-Joule/sap-joule-ai-toolkit (if CODING); SAP Joule Capability — github.com/SAP/custom-agentic-cookbook (if CODING)
@@ -411,7 +413,7 @@ Note: developer skills have low community scores (0–3) but high role relevance
 - Concise technical answers; expand only when architecture context is needed
 - Mention SAP-specific constraints (clean core, ABAP Cloud rules, BTP quotas)
 
-### Agent & GitHub Catalog (v1.8.0)
+### Agent & GitHub Catalog
 **OneAI Spaces (Essential):** ACTION — Integration Suite use case
 **OneAI Spaces (Recommended):** Golden Ticket to Data Products (if AI_DEV)
 **GitHub Skills:** Joule A2A Agent — github.com/The-Joule/sap-joule-ai-toolkit; SAP Joule Capability — github.com/SAP/custom-agentic-cookbook
@@ -450,7 +452,7 @@ PRESENTATIONS: + `branded presentation`, `executive briefing`
 - Keep SAP internal terminology out of customer-facing drafts
 - Meeting summaries should use action-item format with owners and dates
 
-### Agent & GitHub Catalog (v1.8.0)
+### Agent & GitHub Catalog
 **OneAI Spaces (Essential):** Ask ONE360, CSM Process and Operations, AIgor — Adoption Programs
 **OneAI Spaces (Recommended):** [Ask Services] Advanced Success Plan, [Ask Services] Max Success Plan, ASP Chatbot SharePoint, Global SPM/TQM Community
 **GitHub Skills:** None specific
@@ -499,7 +501,7 @@ FOCUS includes standards (Q1=3): + `product standard`, `compliance documentation
 - Apply SAP writing style guidelines for product content
 - Cite SAP official sources; label analyst benchmarks clearly
 
-### Agent & GitHub Catalog (v1.8.0)
+### Agent & GitHub Catalog
 **OneAI Spaces (Essential):** Product Knowledge BTM (if FOCUS=5)
 **OneAI Spaces (Recommended):** Product Knowledge ERP, Product Knowledge Business Suite
 **GitHub Skills:** Joule Studio 2.0 KB — github.tools.sap/SAP-Build-Enablement/Joule-Studio-and-SAP-Build-KB (INTERNAL, if FOCUS=4)
@@ -554,10 +556,10 @@ SPECIALIZATION includes BTM: + `LeanIX`, `Signavio`, `WalkMe`
 - Position SAP vs. competitors only on factual capability differences
 - Clarify which licenses or entitlements are required for mentioned features
 
-### Agent & GitHub Catalog (v1.8.0)
+### Agent & GitHub Catalog
 **OneAI Spaces:** Not applicable (Role 9 is EXTERNAL/PARTNER mode — no OneAI access)
 **GitHub Skills (PARTNER mode):** Joule A2A Agent — github.com/The-Joule/sap-joule-ai-toolkit (if CODING); SAP Joule Capability — github.com/SAP/custom-agentic-cookbook (if CODING); SAP Joule Module — github.com/vigneshbarani24/sap-superpowers
-**AI-Generatable Templates:** T1 (SAP Product Expert, per SPECIALIZATION), T2 (Presales Strategy Partner if PRESENTATIONS/DEMOS), T4 (Demo Prep if DEMOS + DEMO_ENVS)
+**AI-Generatable Templates:** T1 (SAP Product Expert, per SPECIALIZATION), T2 (Presales Strategy Partner if PRESENTATIONS/DEMOS) — see agents.md Section 3 for full T2 role eligibility; T4 (Demo Prep if DEMOS + DEMO_ENVS)
 **Personal Agent Template:** Roles 9/12 template exists in agents.md — only usable if OneAI MCP is available (INTERNAL mode). PARTNER mode: not applicable at runtime.
 
 ---
@@ -592,11 +594,11 @@ PRESENTATIONS: + `executive presentation`, `C-level briefing`
 - For executive communications, keep responses concise and action-oriented
 - Use commercial names (RISE with SAP, SAP GROW) rather than technical product names
 
-### Agent & GitHub Catalog (v1.8.0)
+### Agent & GitHub Catalog
 **OneAI Spaces (Essential):** Ask ONE360, Melody Help, [Ask Services] Cloud ERP
 **OneAI Spaces (Recommended):** APM Pricing Agent, SAP HCM Commercial Desk
 **GitHub Skills:** None specific
-**AI-Generatable Templates:** T2 (Presales Strategy Partner if PRESENTATIONS or ACCOUNT_MGMT) — *Role 10 is now included in T2 eligibility per SKILL.md update*
+**AI-Generatable Templates:** T2 (Presales Strategy Partner if PRESENTATIONS or ACCOUNT_MGMT) — see agents.md Section 3 for full T2 role eligibility
 **Personal Agent Template:** Role 1 base (substitute role name)
 
 ---
@@ -626,7 +628,7 @@ If description includes technical/dev: + `BTP`, `ABAP`, `integration`
 - Do not assume SAP internal tools unless the user describes an SAP employee context
 - Keep responses broad and adaptable until the user's domain becomes clearer
 
-### Agent & GitHub Catalog (v1.8.0)
+### Agent & GitHub Catalog
 **OneAI Spaces:** Inherit from closest matching role
 **GitHub Skills:** None specific
 **AI-Generatable Templates:** None by default
@@ -699,7 +701,7 @@ PROJECT_MGMT: + `project checklist`, `cutover planning`
 - Prefer numbered step-by-step formats for process guidance
 - Clarify which licenses and entitlements are required for customer-facing features
 
-### Agent & GitHub Catalog (v1.8.0)
+### Agent & GitHub Catalog
 **OneAI Spaces:** Not applicable (PARTNER mode — no OneAI access)
 **ADAPT Connector:** Always included per ADAPT Connector Rule (Roles 1, 9, 12 in PARTNER mode).
 **GitHub Skills (PARTNER mode):** Joule A2A Agent — github.com/The-Joule/sap-joule-ai-toolkit (if SOLUTION includes BTP); SAP Joule Capability — github.com/SAP/custom-agentic-cookbook (if SOLUTION includes BTP)

@@ -1,4 +1,6 @@
-# Agent Catalog — jwd-tailor v1.8.0
+# Agent Catalog — Joule Work Tailor
+
+> **Catalog version: 2.0.2** (independent of SKILL.md version — update this when any section below changes)
 
 Used by Steps A3 (catalog search), A5 (recommendation output), A6 (install routing), and A7 (personal agent creation).
 
@@ -194,6 +196,8 @@ You are an expert application design partner for SAP-adjacent solutions built on
 SAP BTP, SAP CAP, ABAP Cloud, and Joule extensions.
 
 You guide from business problem → architecture decisions → implementation plan.
+
+Primary development platform: {CODING_PLATFORM}
 
 ## Core Design Principles
 
