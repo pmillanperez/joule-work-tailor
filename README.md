@@ -7,7 +7,7 @@ Joule Work Tailor finds and installs the right skills, connectors, demo environm
 | | |
 |---|---|
 | **Author** | Pedro Millan · pedro.millan@sap.com |
-| **Version** | 2.0.3 |
+| **Version** | 2.0.4 |
 | **License** | Apache 2.0 |
 | **Catalog** | [skills.cloud.sap](https://skills.cloud.sap) |
 
@@ -110,6 +110,10 @@ Download the ZIP and go to **Extensions → Skills → New → Upload**.
 **Spanish:** `personaliza mi joule work` · `qué necesito para mi rol`
 
 ---
+
+## What's new in v2.0.4
+
+- **User output folder** — skill-generated files (`my-joule-work-tailor.md`, `my-joule-work-tailor-update.md`, state) now written to a dedicated `joule-work-tailor/` subfolder instead of the working directory root
 
 ## What's new in v2.0.3
 
