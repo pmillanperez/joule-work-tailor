@@ -1,0 +1,4 @@
+# Personal user instance files — never commit these
+my-*.md
+*-state.json
+.DS_Store
