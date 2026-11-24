@@ -87,7 +87,7 @@ For ROLES 1, 5, 9 and (in PARTNER mode) 12 with DEMOS flag: also read `reference
 - For single-select: end with *"Type one number."*
 - For yes/no: present as a two-item numbered list: `1. Yes` / `2. No`.
 - Handle shortcuts: `all` = every option; `1-3` = options 1, 2, 3; a single number = that option only.
-- Follow drill-down branching from `references/roles.md`: only ask a sub-question if the parent answer triggers it. Never ask a sub-question unprompted.
+- Follow drill-down branching from the role file already in context: only ask a sub-question if the parent answer triggers it. Never ask a sub-question unprompted.
 - Wait for the answer to each question before showing the next.
 
 **Never ask the user to type a product name, role description, or free-text answer unless they chose option 11 (Other) in A1.**

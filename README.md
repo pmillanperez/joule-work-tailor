@@ -34,7 +34,7 @@ Add a secondary role with zero extra questions. The skill merges both roles' ski
 Generates a **Role Description** and **Personal Instructions** block tailored to your role and activities. Copy and paste into **Settings → Personalization**. Already have a profile? Paste it and the skill improves it rather than replacing it — with a full diff showing what was kept, updated, added, and removed.
 
 ### 4. Profile refinement (optional)
-After the profile is generated, an optional 5-question sequence lets you sharpen your Personal Instructions: response language, format, technical depth, length, and tone.
+After install, an optional 5-question sequence lets you sharpen your Personal Instructions: response language, format, technical depth, length, and tone.
 
 ### 5. Demo environment connectors *(Solution Advisors, Data & AI, Partners)*
 Looks up the exact MCP endpoints for your selected SIX demo landscapes (C39, GLA-26Q2, and others) and adds them to your recommendations. Always installs the Experience Agent connector first.
@@ -104,35 +104,20 @@ Download the ZIP and go to **Extensions → Skills → New → Upload**.
 
 ---
 
-## What's new in v2.0.4
+## What's new in v3.0.1
 
-- **User output folder** — skill-generated files (`my-joule-work-tailor.md`, `my-joule-work-tailor-update.md`, state) now written to a dedicated `joule-work-tailor/` subfolder instead of the working directory root
-
-## What's new in v2.0.3
-
-- **Multi-role support** — add a secondary role with zero extra questions; skill lists are merged and deduplicated
-- **Fix: ADAPT Connector** — explicit `install_asset` call added for INTERNAL mode; ADAPT is never searched on the Hub
-- **Fix: Flow B role selection** — numbered list instead of free-text `'same'`; option to change secondary role only
-- **Fix: T3 Application Design Coach** — `{CODING_PLATFORM}` placeholder now correctly injected into generated skill body
-- **Fix: I4M landscape URL** — corrected `i4w` → `i4m` in MCP endpoint
-- **Fix: duplicate Manual Install block** removed from SKILL.md
-- **Reference catalog versioning** — agents.md and roles.md now carry an independent catalog version header
-
-## What's new in v2.0.0
-
-- **State persistence** — saves your role, areas, and installed items to `joule-work-tailor-state.json`; returning users skip re-questioning and see only what's changed since last run
-- **NEW / Updated badges** — skills added to the catalog since your last setup are flagged with `🆕 NEW` or `🔄 Updated` in recommendation tables
-- **Dismiss permanently** — type `dismiss N` to hide a skill you don't want; `undo dismiss` and `show dismissed` to manage your list
-- **Outlook enrichment** — reads recent emails and calendar events to infer additional role context and improve recommendations
-- **Match scoring (%)** — each recommendation includes a 5-component score: tier base weight, area overlap, activity signals, community popularity, and recency
-- **Fallback chain** — 3-tier relaxation when filters return too few results
+- **Phase-based architecture** — skill files split into phases loaded on demand; faster responses, less LLM context per turn
+- **Individual role files** — `role-01.md` through `role-17.md` replace the monolithic `roles.md`; only the selected role is loaded
+- **Profile refinement moved** — R1–R5 questions now appear after install, not before recommendations
+- **Streamlined intake** — Step A2b confirmation turn removed; inline announcement replaces the extra round-trip
+- **State persistence, NEW/Updated badges, Outlook enrichment, Match scoring** — all features from v2.x carried forward
 
 ---
 
 | | |
 |---|---|
 | **Author** | Pedro Millan · pedro.millan@sap.com |
-| **Version** | 2.0.4 |
+| **Version** | 3.0.1 |
 | **License** | Apache 2.0 |
 | **Catalog** | [skills.cloud.sap](https://skills.cloud.sap) |
 

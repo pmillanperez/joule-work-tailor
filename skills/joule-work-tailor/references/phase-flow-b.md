@@ -2,6 +2,8 @@
 
 This file is loaded when the user selects 'Stay current' in Step 1. Read it with `read_file` at the start of Flow B.
 
+**IMPORTANT:** The role file (`references/role-{NN}.md`) is loaded alongside this file by SKILL.md routing — it is already in context. Use it directly for Skill Queries and Personalization Defaults. Do NOT read `references/roles.md`.
+
 ---
 
 ## Flow B — Stay Current

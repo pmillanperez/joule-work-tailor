@@ -220,7 +220,7 @@ All presales roles carry the **Solution Advisor** title. Sub-teams align to port
 - **IT Technology Services Expert / Specialist / Senior Specialist**
 
 ### Partner and Customer Roles
-Partner and customer role titles are not part of SAP internal taxonomy. See `references/roles.md` for definitions:
+Partner and customer role titles are not part of SAP internal taxonomy. See `references/roles-index.md` for the full mapping:
 - **Role 9:** Partner Consultant / Partner Sales Engineer
 - **Role 12:** Partner Delivery / Implementation Consultant (PARTNER mode)
 - **Roles 13–17:** Customer Business Users (Finance, HR, Operations, IT, Data/General)
