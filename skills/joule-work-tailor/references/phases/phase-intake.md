@@ -98,7 +98,7 @@ After collecting all answers, announce immediately — no confirmation question:
 
 *"Got it — searching the catalog for **[ROLE]** covering [AREAS in plain language] with [activities in plain language]."*
 
-Then load `references/phase-search.md` and begin Step A3.
+Then load `references/phases/phase-search.md` and begin Step A3.
 
 **Correction escape hatch:** If the user then says "wait", "actually", "I made a mistake", or similar — stop, ask which question they want to fix (Q1 / Q2 / Q3), re-collect that answer, then continue to A3 again.
 

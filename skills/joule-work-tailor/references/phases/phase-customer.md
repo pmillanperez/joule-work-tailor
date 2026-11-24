@@ -53,7 +53,7 @@ Then ask:
 
 *Type one number.*
 
-Map to role file: 1→role-14.md, 2→role-15.md, 3→role-16.md, 4→role-13.md, 5→role-17.md, 6→role-17.md. Store as CUSTOMER_ROLE. Load the corresponding role file with `read_file("references/role-{NN}.md")`.
+Map to role file: 1→role-14.md, 2→role-15.md, 3→role-16.md, 4→role-13.md, 5→role-17.md, 6→role-17.md. Store as CUSTOMER_ROLE. Load the corresponding role file with `read_file("references/roles/role-{NN}.md")`.
 
 ### CT2 — Catalog Search
 

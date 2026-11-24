@@ -190,25 +190,25 @@ After determining the flow (A, B, or Customer Track), load ONLY the relevant pha
 
 | Phase | When to load | File |
 |-------|-------------|------|
-| **Intake** | After Step 1 routes to Flow A | `read_file("references/phase-intake.md")` then `read_file("references/role-{NN}.md")` where NN = zero-padded role number from A1 |
-| **Search** | After A2b confirmation completes | `read_file("references/phase-search.md")` — the role file is already in context from Intake |
-| **Output** | After A3 search results are ready | `read_file("references/phase-output.md")` |
+| **Intake** | After Step 1 routes to Flow A | `read_file("references/phases/phase-intake.md")` then `read_file("references/roles/role-{NN}.md")` where NN = zero-padded role number from A1 |
+| **Search** | After A2b confirmation completes | `read_file("references/phases/phase-search.md")` — the role file is already in context from Intake |
+| **Output** | After A3 search results are ready | `read_file("references/phases/phase-output.md")` |
 
 ### Flow B — Stay Current
 
 After Step 1 routes to Flow B:
-1. `read_file("references/phase-flow-b.md")`
-2. `read_file("references/role-{NN}.md")` using stored role number from state
+1. `read_file("references/phases/phase-flow-b.md")`
+2. `read_file("references/roles/role-{NN}.md")` using stored role number from state
 
 ### Customer Track
 
 After Step 0b sets AUDIENCE = CUSTOMER:
-1. `read_file("references/phase-customer.md")`
-2. After CT1 role selection: `read_file("references/role-{NN}.md")` using customer role mapping (CT1 option 1 = role-14, 2 = role-15, 3 = role-16, 4 = role-13, 5 = role-17, 6 = role-17)
+1. `read_file("references/phases/phase-customer.md")`
+2. After CT1 role selection: `read_file("references/roles/role-{NN}.md")` using customer role mapping (CT1 option 1 = role-14, 2 = role-15, 3 = role-16, 4 = role-13, 5 = role-17, 6 = role-17)
 
 ### Role File Naming
 
-Files: `role-01.md` through `role-17.md` in `references/`. See `references/roles-index.md` for the full mapping.
+Files: `role-01.md` through `role-17.md` in `references/roles/`. See `references/roles/roles-index.md` for the full mapping.
 
 **IMPORTANT:** Do NOT read the monolithic `roles-archive.md` in the skill root — it is 40KB and contains all 17 roles. Always read the individual `role-{NN}.md` file for the user's selected role.
 
